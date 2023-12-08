@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/albumListFragment">
+
+    <fragment
+        android:id="@+id/albumListFragment"
+        android:name="com.wintttr.albumapplication.AlbumListFragment"
+        android:label="AlbumListFragment" >
+        <action
+            android:id="@+id/navigate_photo_grid"
+            app:destination="@id/photoGridFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/photoGridFragment"
+        android:name="com.wintttr.albumapplication.PhotoGridFragment"
+        android:label="PhotoGridFragment" >
+        <argument
+            android:name="albumTitle"
+            app:argType="string" />
+        <action
+            android:id="@+id/navigate_photo_description"
+            app:destination="@id/photoDescriptionFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/photoDescriptionFragment"
+        android:name="com.wintttr.albumapplication.PhotoDescriptionFragment"
+        android:label="PhotoDescriptionFragment" >
+        <argument
+            android:name="id"
+            app:argType="long" />
+    </fragment>
+</navigation>
