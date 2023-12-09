@@ -5,12 +5,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResultListener
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -87,6 +84,18 @@ class AlbumListFragment : Fragment() {
         }
     }
 
+    // ЭТО ВСЁ НЕПРАВИЛЬНО, Я ЭТО НЕ ПОНИМАЮ
+    // ЭТО КОСТЫЛЬ, ЭТО НАДО ИСПРАВИТЬ
+    // TODO TODO TODO TODO TODO
+    private fun okDialogListener(adapter: AlbumListAdapter?) = { title: String ->
+        if(adapter != null) {
+            addAlbum(title, adapter)
+        }
+        else {
+            Toast.makeText(requireContext(), "Что-то пошло не так((", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         var adapter: AlbumListAdapter? = null
 
@@ -112,20 +121,22 @@ class AlbumListFragment : Fragment() {
         binding.albumListToolbar.setOnMenuItemClickListener {
             when(it.itemId) {
                 R.id.add_album_item -> {
-                    if(adapter != null) {
-                        addAlbum("${adapter!!.itemCount}", adapter!!)
-                        true
-                    }
-                    else {
-                        Toast.makeText(
-                            requireContext(),
-                            "Что-то пошло не так((",
-                            Toast.LENGTH_LONG
-                        ).show()
-                        false
-                    }
+                    TitlePickerDialogFragment(okDialogListener(adapter)).show(
+                        childFragmentManager, TitlePickerDialogFragment.TAG
+                    )
+                    true
                 }
                 else -> false
+            }
+        }
+
+
+        setFragmentResultListener(TitlePickerDialogFragment.REQUEST_ALBUM_TITLE) { requestKey, bundle ->
+            if(bundle.getString(requestKey) != null && adapter != null) {
+                addAlbum(bundle.getString(requestKey)!!, adapter!!)
+            }
+            else {
+                Toast.makeText(requireContext(), "Что-то пошло не так((", Toast.LENGTH_SHORT).show()
             }
         }
     }

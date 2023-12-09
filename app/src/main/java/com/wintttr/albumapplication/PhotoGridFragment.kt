@@ -1,6 +1,5 @@
 package com.wintttr.albumapplication
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
@@ -19,8 +18,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.wintttr.albumapplication.databinding.FragmentPhotoGridBinding
 import com.wintttr.albumapplication.databinding.ViewHolderPhotoBinding
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -101,6 +98,44 @@ class PhotoGridFragment : Fragment() {
         }
     }
 
+    private val pickPhotosLauncher = registerForActivityResult(
+        ActivityResultContracts.GetMultipleContents()
+    ) {
+        for(uri in it) {
+            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+                val fileName = UUID.randomUUID().toString()
+
+                val photoFile = File(
+                    requireContext().applicationContext.filesDir,
+                    fileName
+                )
+
+                val photoId = AlbumRepository.get().insertPhoto(Photo(
+                    fileName,
+                    args.albumTitle
+                ))
+
+                val bitmap = BitmapFactory.decodeStream(requireContext().contentResolver.openInputStream(uri))
+
+                withContext(Dispatchers.Main) {
+                    adapter!!.add(photoId, bitmap)
+                }
+
+                photoFile.createNewFile()
+                photoFile.outputStream().use { outputStream ->
+                    requireContext().contentResolver.openInputStream(uri)?.let {inputStream ->
+                        val buffer = ByteArray(1024)
+                        var len = inputStream.read(buffer)
+                        while (len != -1) {
+                            outputStream.write(buffer, 0, len)
+                            len = inputStream.read(buffer)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private fun takePhoto() {
         val id = UUID.randomUUID()
 
@@ -165,6 +200,10 @@ class PhotoGridFragment : Fragment() {
             when(it.itemId) {
                 R.id.take_photo_item -> {
                     takePhoto()
+                    true
+                }
+                R.id.add_photo_item -> {
+                    pickPhotosLauncher.launch("image/*")
                     true
                 }
                 else -> {
