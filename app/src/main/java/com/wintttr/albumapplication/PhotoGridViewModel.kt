@@ -42,8 +42,6 @@ class PhotoGridViewModel(
     fun loadBitmap(context: Context, photo: Photo, callback: (Bitmap) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             val bitmap = getBitmap(context, photo)
-
-            delay(5000)
             
             withContext(Dispatchers.Main) {
                 callback(bitmap)
