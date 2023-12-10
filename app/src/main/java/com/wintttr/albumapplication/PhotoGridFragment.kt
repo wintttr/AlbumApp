@@ -95,7 +95,7 @@ class PhotoGridFragment : Fragment() {
             val photo = Photo(photoName!!, args.albumTitle)
             viewModel.insertPhoto(photo)
         } else {
-            Toast.makeText(requireContext(), "Что-то пошло не так((", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), getString(R.string.toast_error), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -185,7 +185,7 @@ class PhotoGridFragment : Fragment() {
                     true
                 }
                 else -> {
-                    Toast.makeText(requireContext(), "ЕЩЁ НЕ ГОТОВО", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), getString(R.string.toast_error), Toast.LENGTH_SHORT).show()
                     false
                 }
             }
