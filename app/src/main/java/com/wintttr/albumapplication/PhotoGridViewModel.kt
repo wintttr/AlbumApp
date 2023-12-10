@@ -9,9 +9,11 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch    
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class PhotoGridViewModel(
     private val albumTitle: String
@@ -35,6 +37,18 @@ class PhotoGridViewModel(
         }
 
         return AlbumRepository.get().photoCache[photo]!!
+    }
+
+    fun loadBitmap(context: Context, photo: Photo, callback: (Bitmap) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val bitmap = getBitmap(context, photo)
+
+            delay(5000)
+            
+            withContext(Dispatchers.Main) {
+                callback(bitmap)
+            }
+        }
     }
 
     @OptIn(DelicateCoroutinesApi::class)

@@ -1,7 +1,6 @@
 package com.wintttr.albumapplication
 
 import android.annotation.SuppressLint
-import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -21,9 +20,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.wintttr.albumapplication.databinding.FragmentPhotoGridBinding
 import com.wintttr.albumapplication.databinding.ViewHolderPhotoBinding
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
 
@@ -33,18 +30,12 @@ class PhotoViewHolder(
     private val onClick: (Long) -> Unit
 ) : RecyclerView.ViewHolder(binding.root) {
     fun bind(photo: Photo) {
-        GlobalScope.launch(Dispatchers.Main) {
-            val bitmap: Bitmap
+        binding.root.setOnClickListener {
+            onClick(photo.id)
+        }
 
-            withContext(Dispatchers.IO) {
-                bitmap = viewModel.getBitmap(binding.root.context, photo)
-            }
-
-            binding.root.setImageBitmap(bitmap)
-
-            binding.root.setOnClickListener {
-                onClick(photo.id)
-            }
+        viewModel.loadBitmap(binding.root.context, photo) {
+            binding.root.setImageBitmap(it)
         }
     }
 }
