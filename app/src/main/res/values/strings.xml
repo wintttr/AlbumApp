@@ -6,6 +6,7 @@
     <string name="description">Description:</string>
     <string name="toast_error">Something went wrong((9</string>
     <string name="dialog_title">Album title</string>
-    <string name="dialog_positive_answer">Ok</string>
+    <string name="dialog_positive_answer">OK</string>
     <string name="dialog_negative_answer">Cancel</string>
+    <string name="change_language">Change language</string>
 </resources>

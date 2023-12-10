@@ -1,6 +1,8 @@
 package com.wintttr.albumapplication
 
+import android.content.res.Configuration
 import android.os.Bundle
+import android.os.LocaleList
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,6 +18,7 @@ import com.wintttr.albumapplication.databinding.ViewHolderAlbumBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 private class AlbumViewHolder(
     private val binding: ViewHolderAlbumBinding,
@@ -124,6 +127,31 @@ class AlbumListFragment : Fragment() {
                     TitlePickerDialogFragment(okDialogListener(adapter)).show(
                         childFragmentManager, TitlePickerDialogFragment.TAG
                     )
+                    true
+                }
+                R.id.change_language_item -> {
+                    val languageToLoad = if(Locale.getDefault().language == Locale("ru").language) {
+                        "en"
+                    }
+                    else{
+                        "ru"
+                    }
+
+                    val locale = Locale(languageToLoad)
+                    Locale.setDefault(locale)
+
+                    val config = Configuration().apply {
+                        setToDefaults()
+                        setLocales(LocaleList(locale))
+                    }
+
+                    resources.updateConfiguration(
+                        config,
+                        resources.displayMetrics
+                    )
+
+                    requireActivity().recreate()
+
                     true
                 }
                 else -> false

@@ -8,4 +8,5 @@
     <string name="dialog_title">Название альбома</string>
     <string name="dialog_positive_answer">Добавить</string>
     <string name="dialog_negative_answer">Отменить</string>
+    <string name="change_language">Сменить язык</string>
 </resources>
