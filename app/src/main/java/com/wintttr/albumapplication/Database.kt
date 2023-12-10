@@ -1,20 +1,18 @@
 package com.wintttr.albumapplication
 
 import android.content.Context
+import android.graphics.Bitmap
 import androidx.room.Dao
 import androidx.room.Database
-import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
-import androidx.room.Relation
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.Update
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import java.util.UUID
+import kotlinx.coroutines.flow.Flow
+import java.util.concurrent.ConcurrentHashMap
 
 @Entity
 data class Album(
@@ -44,7 +42,7 @@ interface AlbumDao {
     suspend fun getAlbum(title: String): Album
 
     @Query("SELECT * FROM photo WHERE albumTitle=:title")
-    suspend fun getPhotos(title: String): List<Photo>
+    fun getPhotos(title: String): Flow<List<Photo>>
 
     @Query("SELECT * FROM photo WHERE id=:id")
     suspend fun getPhoto(id: Long): Photo
@@ -67,19 +65,19 @@ class AlbumRepository private constructor(context: Context) {
         DATABASE_NAME
     ).build()
 
+    val photoCache = ConcurrentHashMap<Photo, Bitmap>()
+
     suspend fun insertAlbum(title: String) = database.albumDao().insertAlbum(Album(title))
 
     suspend fun insertPhoto(photo: Photo) = database.albumDao().insertPhoto(photo)
 
     suspend fun getAlbums() = database.albumDao().getAlbums()
 
-    suspend fun getAlbum(title: String) = database.albumDao().getAlbum(title)
-
     suspend fun getPhoto(id: Long) = database.albumDao().getPhoto(id)
 
     suspend fun updatePhoto(photo: Photo) = database.albumDao().updatePhoto(photo)
 
-    suspend fun getPhotos(title: String) = database.albumDao().getPhotos(title)
+    fun getPhotos(title: String) = database.albumDao().getPhotos(title)
 
     companion object {
         private var INSTANCE: AlbumRepository? = null

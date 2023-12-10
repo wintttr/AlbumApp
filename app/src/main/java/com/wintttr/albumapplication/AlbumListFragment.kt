@@ -92,7 +92,7 @@ class AlbumListFragment : Fragment() {
             addAlbum(title, adapter)
         }
         else {
-            Toast.makeText(requireContext(), "Что-то пошло не так((", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), resources.getString(R.string.toast_error), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -136,7 +136,7 @@ class AlbumListFragment : Fragment() {
                 addAlbum(bundle.getString(requestKey)!!, adapter!!)
             }
             else {
-                Toast.makeText(requireContext(), "Что-то пошло не так((", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), resources.getString(R.string.toast_error), Toast.LENGTH_SHORT).show()
             }
         }
     }

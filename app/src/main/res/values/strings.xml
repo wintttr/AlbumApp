@@ -3,4 +3,9 @@
     <string name="add_album_string">Add album</string>
     <string name="take_photo_string">Take photo</string>
     <string name="add_photo_string">Add photo</string>
+    <string name="description">Description:</string>
+    <string name="toast_error">Something went wrong((9</string>
+    <string name="dialog_title">Album title</string>
+    <string name="dialog_positive_answer">Ok</string>
+    <string name="dialog_negative_answer">Cancel</string>
 </resources>

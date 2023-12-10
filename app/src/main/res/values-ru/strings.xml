@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">AlbumApplication</string>
+    <string name="add_album_string">Добавить альбом</string>
+    <string name="take_photo_string">Сделать фото</string>
+    <string name="add_photo_string">Добавить фото</string>
+    <string name="description">Описание:</string>
+    <string name="toast_error">Штота пашло нитак((9</string>
+    <string name="dialog_title">Название альбома</string>
+    <string name="dialog_positive_answer">Добавить</string>
+    <string name="dialog_negative_answer">Отменить</string>
+</resources>

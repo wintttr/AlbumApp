@@ -1,7 +1,7 @@
 package com.wintttr.albumapplication
 
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -10,7 +10,10 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.GridLayoutManager
@@ -18,34 +21,45 @@ import androidx.recyclerview.widget.RecyclerView
 import com.wintttr.albumapplication.databinding.FragmentPhotoGridBinding
 import com.wintttr.albumapplication.databinding.ViewHolderPhotoBinding
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
 
-private class PhotoViewHolder(
+class PhotoViewHolder(
     private val binding: ViewHolderPhotoBinding,
+    private val viewModel: PhotoGridViewModel,
     private val onClick: (Long) -> Unit
 ) : RecyclerView.ViewHolder(binding.root) {
-    fun bind(photoId: Long, bitmap: Bitmap) {
-        binding.root.setImageBitmap(bitmap)
+    fun bind(photo: Photo) {
+        GlobalScope.launch(Dispatchers.Main) {
+            val bitmap: Bitmap
 
-        binding.root.setOnClickListener {
-            onClick(photoId)
+            withContext(Dispatchers.IO) {
+                bitmap = viewModel.getBitmap(binding.root.context, photo)
+            }
+
+            binding.root.setImageBitmap(bitmap)
+
+            binding.root.setOnClickListener {
+                onClick(photo.id)
+            }
         }
     }
 }
 
-private class PhotoGridAdapter(
+class PhotoGridAdapter(
+    private val fragment: PhotoGridFragment,
     private val onClick: (Long) -> Unit
 ): RecyclerView.Adapter<PhotoViewHolder>() {
-    private val idList = mutableListOf<Long>()
-    private val innerList = mutableListOf<Bitmap>()
+    private val photoList = mutableListOf<Photo>()
 
-    fun add(photoId: Long, bitmap: Bitmap) {
-        idList.add(photoId)
-        innerList.add(bitmap)
-        notifyItemInserted(innerList.size - 1)
+    @SuppressLint("NotifyDataSetChanged")
+    fun changeAndNotify(list: List<Photo>) {
+        photoList.clear()
+        photoList.addAll(list)
+        notifyDataSetChanged()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoViewHolder {
@@ -55,44 +69,40 @@ private class PhotoGridAdapter(
                 parent,
                 false
             ),
+            fragment.viewModel,
             onClick
         )
     }
 
-    override fun getItemCount() = innerList.size
+    override fun getItemCount() = photoList.size
 
     override fun onBindViewHolder(holder: PhotoViewHolder, position: Int) {
-        holder.bind(idList[position], innerList[position])
+        holder.bind(photoList[position])
     }
 }
 
 class PhotoGridFragment : Fragment() {
     private var _binding: FragmentPhotoGridBinding? = null
     private val binding get() = checkNotNull(_binding)
+
     private val args by navArgs<PhotoGridFragmentArgs>()
 
-    private var adapter: PhotoGridAdapter? = null
+    private var adapter = PhotoGridAdapter(this) {
+        findNavController().navigate(PhotoGridFragmentDirections.navigatePhotoDescription(it))
+    }
 
     private var photoName: String? = null
+
+    val viewModel: PhotoGridViewModel by viewModels {
+        PhotoGridViewModelFactory(args.albumTitle)
+    }
 
     private val takePhotoLauncher = registerForActivityResult(
         ActivityResultContracts.TakePicture()
     ) {
-        if(it && photoName != null && adapter != null) {
-            viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-                val photoId = AlbumRepository.get().insertPhoto(Photo(
-                    photoName!!,
-                    args.albumTitle
-                ))
-
-                val bitmap = BitmapFactory.decodeStream(
-                    requireContext().applicationContext.openFileInput(photoName)
-                )
-
-                withContext(Dispatchers.Main) {
-                    adapter!!.add(photoId, bitmap)
-                }
-            }
+        if(it && photoName != null) {
+            val photo = Photo(photoName!!, args.albumTitle)
+            viewModel.insertPhoto(photo)
         } else {
             Toast.makeText(requireContext(), "Что-то пошло не так((", Toast.LENGTH_SHORT).show()
         }
@@ -103,27 +113,18 @@ class PhotoGridFragment : Fragment() {
     ) {
         for(uri in it) {
             viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-                val fileName = UUID.randomUUID().toString()
+                val filename = UUID.randomUUID().toString()
 
                 val photoFile = File(
                     requireContext().applicationContext.filesDir,
-                    fileName
+                    filename
                 )
 
-                val photoId = AlbumRepository.get().insertPhoto(Photo(
-                    fileName,
-                    args.albumTitle
-                ))
-
-                val bitmap = BitmapFactory.decodeStream(requireContext().contentResolver.openInputStream(uri))
-
-                withContext(Dispatchers.Main) {
-                    adapter!!.add(photoId, bitmap)
-                }
+                val photo = Photo(filename, args.albumTitle)
 
                 photoFile.createNewFile()
                 photoFile.outputStream().use { outputStream ->
-                    requireContext().contentResolver.openInputStream(uri)?.let {inputStream ->
+                    requireContext().contentResolver.openInputStream(uri)?.let { inputStream ->
                         val buffer = ByteArray(1024)
                         var len = inputStream.read(buffer)
                         while (len != -1) {
@@ -132,6 +133,8 @@ class PhotoGridFragment : Fragment() {
                         }
                     }
                 }
+
+                viewModel.insertPhoto(photo)
             }
         }
     }
@@ -161,31 +164,15 @@ class PhotoGridFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentPhotoGridBinding.inflate(inflater, container, false)
+        binding.photoGrid.adapter = adapter
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-            val photoList = AlbumRepository.get().getPhotos(args.albumTitle)
-
-            adapter = PhotoGridAdapter {
-                findNavController().navigate(PhotoGridFragmentDirections.navigatePhotoDescription(it))
-            }
-
-            withContext(Dispatchers.Main) {
-                binding.photoGrid.adapter = adapter
-            }
-
-            // Аыаыаы костыль
-            for(photo in photoList) {
-                val bitmap = BitmapFactory.decodeStream(
-                    requireContext().applicationContext.openFileInput(
-                        photo.fileName
-                    )
-                )
-
-                withContext(Dispatchers.Main) {
-                    adapter!!.add(photo.id, bitmap)
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.photoList.collect {
+                    adapter.changeAndNotify(it)
                 }
             }
         }
@@ -217,6 +204,5 @@ class PhotoGridFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-        adapter = null
     }
 }
